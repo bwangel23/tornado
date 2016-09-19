@@ -601,6 +601,9 @@ class RequestHandler(object):
         cookie in the browser, but is independent of the ``max_age_days``
         parameter to `get_secure_cookie`.
 
+        这里这个HMAC是散列消息认证码，大约是知道用来进行哈希和验证的。
+        需要查看维基百科，进行详细的了解。
+
         Secure cookies may contain arbitrary byte values, not just unicode
         strings (unlike regular cookies)
 
