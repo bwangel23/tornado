@@ -16,16 +16,15 @@ $(document).ready(function() {
     if (!window.console) window.console = {};
     if (!window.console.log) window.console.log = function() {};
 
-    $("#messageform").on("submit", function() {
+    $("#messageform").live("submit", function() {
         newMessage($(this));
         return false;
     });
-    $("#messageform").on("keypress", function(e) {
+    $("#messageform").live("keypress", function(e) {
         if (e.keyCode == 13) {
             newMessage($(this));
             return false;
         }
-        return true;
     });
     $("#message").select();
     updater.poll();
@@ -36,6 +35,7 @@ function newMessage(form) {
     var disabled = form.find("input[type=submit]");
     disabled.disable();
     $.postJSON("/a/message/new", message, function(response) {
+        console.log(typeof(response), response);
         updater.showMessage(response);
         if (message.id) {
             form.parent().remove();
@@ -47,23 +47,39 @@ function newMessage(form) {
 }
 
 function getCookie(name) {
+    // 这个document.cookie是分号分隔的Cookie键值对
+    console.log(document.cookie, typeof(document.cookie));
+    // 这里\\b正则的意思是单词边界，详见
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-word-boundary
     var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
     return r ? r[1] : undefined;
 }
 
 jQuery.postJSON = function(url, args, callback) {
     args._xsrf = getCookie("_xsrf");
-    $.ajax({url: url, data: $.param(args), dataType: "text", type: "POST",
-            success: function(response) {
-        if (callback) callback(eval("(" + response + ")"));
-    }, error: function(response) {
-        console.log("ERROR:", response);
-    }});
+    // 这里提交的类型是表单数据(application/x-www-form-urlencoded)，
+    // 所以需要用JQuery的param方法将参数对象变成&连接的参数字符串
+    console.log(args, typeof(args));
+    console.log($.param(args), typeof($.param(args)));
+    $.ajax({
+        url: url,
+        data: $.param(args),
+        dataType: "text",
+        type: "POST",
+        success: function(response) {
+            console.log(typeof(response), response);
+            // 这里这样调用callback的作用是将response从一个JSON字符串变成一个对象
+            if (callback) callback(eval("(" + response + ")"));
+        },
+        error: function(response) {
+            console.log("ERROR:", response)
+        }
+    });
 };
 
 jQuery.fn.formToDict = function() {
     var fields = this.serializeArray();
-    var json = {};
+    var json = {}
     for (var i = 0; i < fields.length; i++) {
         json[fields[i].name] = fields[i].value;
     }

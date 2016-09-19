@@ -125,6 +125,8 @@ def main():
         debug=options.debug,
         )
     app.listen(options.port)
+    debug_string = "[DEBUG]" if options.debug else ""
+    logging.info("{} Run server on the http://localhost:{}".format(debug_string ,options.port))
     tornado.ioloop.IOLoop.current().start()
 
 
