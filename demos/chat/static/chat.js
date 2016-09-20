@@ -16,11 +16,14 @@ $(document).ready(function() {
     if (!window.console) window.console = {};
     if (!window.console.log) window.console.log = function() {};
 
+    // 在下面两段代码中，this是一个DOM对象，指的是Form这个DOM节点
+    // $(this)是一个JQuery对象
     $("#messageform").live("submit", function() {
         newMessage($(this));
         return false;
     });
     $("#messageform").live("keypress", function(e) {
+        //TODO: 疑问，update请求是如何发出的？
         if (e.keyCode == 13) {
             newMessage($(this));
             return false;
@@ -35,11 +38,11 @@ function newMessage(form) {
     var disabled = form.find("input[type=submit]");
     disabled.disable();
     $.postJSON("/a/message/new", message, function(response) {
-        console.log(typeof(response), response);
         updater.showMessage(response);
         if (message.id) {
             form.parent().remove();
         } else {
+            //TODO: 这里还是不明白，val()的作用是什么？
             form.find("input[type=text]").val("").select();
             disabled.enable();
         }
@@ -48,7 +51,6 @@ function newMessage(form) {
 
 function getCookie(name) {
     // 这个document.cookie是分号分隔的Cookie键值对
-    console.log(document.cookie, typeof(document.cookie));
     // 这里\\b正则的意思是单词边界，详见
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-word-boundary
     var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
@@ -59,15 +61,12 @@ jQuery.postJSON = function(url, args, callback) {
     args._xsrf = getCookie("_xsrf");
     // 这里提交的类型是表单数据(application/x-www-form-urlencoded)，
     // 所以需要用JQuery的param方法将参数对象变成&连接的参数字符串
-    console.log(args, typeof(args));
-    console.log($.param(args), typeof($.param(args)));
     $.ajax({
         url: url,
         data: $.param(args),
         dataType: "text",
         type: "POST",
         success: function(response) {
-            console.log(typeof(response), response);
             // 这里这样调用callback的作用是将response从一个JSON字符串变成一个对象
             if (callback) callback(eval("(" + response + ")"));
         },
