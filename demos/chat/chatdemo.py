@@ -101,8 +101,11 @@ class MessageUpdatesHandler(tornado.web.RequestHandler):
         # Save the future returned by wait_for_messages so we can cancel
         # it in wait_for_messages
         self.future = global_message_buffer.wait_for_messages(cursor=cursor)
+        # 这里会保持一个TCP的长连接，每隔一段时间，客户端发送一个TCP的keep-alive包来保活
+        # 通过这种方式来让TCP连接保持连接
         messages = yield self.future
         if self.request.connection.stream.closed():
+            print("Connection has been closed {}".format(self.request.remote_ip))
             return
         self.write(dict(messages=messages))
 

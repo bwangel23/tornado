@@ -29,6 +29,9 @@ $(document).ready(function() {
             return false;
         }
     });
+    $("#message").select(function () {
+        console.log("Some text has been selected");
+    });
     $("#message").select();
     updater.poll();
 });
@@ -106,6 +109,7 @@ var updater = {
 
     poll: function() {
         var args = {"_xsrf": getCookie("_xsrf")};
+        console.log("Poll");
         if (updater.cursor) args.cursor = updater.cursor;
         $.ajax({url: "/a/message/updates", type: "POST", dataType: "text",
                 data: $.param(args), success: updater.onSuccess,
@@ -113,12 +117,14 @@ var updater = {
     },
 
     onSuccess: function(response) {
+        console.log("onSuccess");
         try {
             updater.newMessages(eval("(" + response + ")"));
         } catch (e) {
             updater.onError();
             return;
         }
+        console.log("onSuccess");
         updater.errorSleepTime = 500;
         window.setTimeout(updater.poll, 0);
     },
