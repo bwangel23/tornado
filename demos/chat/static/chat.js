@@ -23,16 +23,15 @@ $(document).ready(function() {
         return false;
     });
     $("#messageform").live("keypress", function(e) {
-        //TODO: 疑问，update请求是如何发出的？
         if (e.keyCode == 13) {
             newMessage($(this));
             return false;
         }
     });
-    $("#message").select(function () {
-        console.log("Some text has been selected");
-    });
+    // 这里做的作用就是触发input的select事件，即会获得焦点，选中所有文本！
     $("#message").select();
+    //   每次poll都会发送一个被阻塞的请求，如果这个请求响应成功了，那么就调用updater的
+    // OnSuccess方法，在这个方法中会重新调用poll方法，发起一个阻塞Ajax请求。
     updater.poll();
 });
 
@@ -43,9 +42,11 @@ function newMessage(form) {
     $.postJSON("/a/message/new", message, function(response) {
         updater.showMessage(response);
         if (message.id) {
+            //TODO: 这里这部分语句是干嘛用的？
+            console.log("Form parent is", form.parent());
             form.parent().remove();
         } else {
-            //TODO: 这里还是不明白，val()的作用是什么？
+            // 这句的作用是选中输入框（让焦点聚集在其上），并把其中的内容清空。
             form.find("input[type=text]").val("").select();
             disabled.enable();
         }
@@ -60,7 +61,7 @@ function getCookie(name) {
     return r ? r[1] : undefined;
 }
 
-jQuery.postJSON = function(url, args, callback) {
+$.postJSON = function(url, args, callback) {
     args._xsrf = getCookie("_xsrf");
     // 这里提交的类型是表单数据(application/x-www-form-urlencoded)，
     // 所以需要用JQuery的param方法将参数对象变成&连接的参数字符串
@@ -79,7 +80,7 @@ jQuery.postJSON = function(url, args, callback) {
     });
 };
 
-jQuery.fn.formToDict = function() {
+$.fn.formToDict = function() {
     var fields = this.serializeArray();
     var json = {}
     for (var i = 0; i < fields.length; i++) {
@@ -89,12 +90,12 @@ jQuery.fn.formToDict = function() {
     return json;
 };
 
-jQuery.fn.disable = function() {
+$.fn.disable = function() {
     this.enable(false);
     return this;
 };
 
-jQuery.fn.enable = function(opt_enable) {
+$.fn.enable = function(opt_enable) {
     if (arguments.length && !opt_enable) {
         this.attr("disabled", "disabled");
     } else {
@@ -109,7 +110,6 @@ var updater = {
 
     poll: function() {
         var args = {"_xsrf": getCookie("_xsrf")};
-        console.log("Poll");
         if (updater.cursor) args.cursor = updater.cursor;
         $.ajax({url: "/a/message/updates", type: "POST", dataType: "text",
                 data: $.param(args), success: updater.onSuccess,
@@ -117,14 +117,13 @@ var updater = {
     },
 
     onSuccess: function(response) {
-        console.log("onSuccess");
+        console.log("onSuccess: response is ", response);
         try {
             updater.newMessages(eval("(" + response + ")"));
         } catch (e) {
             updater.onError();
             return;
         }
-        console.log("onSuccess");
         updater.errorSleepTime = 500;
         window.setTimeout(updater.poll, 0);
     },
@@ -136,6 +135,7 @@ var updater = {
     },
 
     newMessages: function(response) {
+        // 每个消息都有一个ID，为了防止消息被重复添加
         if (!response.messages) return;
         updater.cursor = response.cursor;
         var messages = response.messages;
